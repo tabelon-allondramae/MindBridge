@@ -1,0 +1,80 @@
+MindBridge: Pseudocode
+
+Module: CalculateRiskScore (AI Risk Scoring Algorithm)
+BEGIN CalculateRiskScore(studentID, responses[])
+DECLARE totalScore = 0
+DECLARE maxPossibleScore = SUM(question.weight * maxAnswerValue) FOR ALL questions
+
+FOR EACH response IN responses[]
+    totalScore = totalScore + (response.weight * response.answerValue)
+END FOR
+
+normalizedScore = (totalScore / maxPossibleScore) * 100
+
+IF normalizedScore >= 75 THEN
+    iskLevel = "High"
+ELSE IF normalizedScore >= 40 THEN
+    riskLevel = "Moderate"
+ELSE
+    riskLevel = "Low"
+END IF
+
+flagged = FALSE
+IF riskLevel = "High" THEN
+    flagged = TRUE
+    CALL NotifyCounselor(studentID, normalizedScore, riskLevel)
+END IF
+
+CALL StoreAnalysisResult(studentID, normalizedScore, riskLevel, flagged)
+CALL GenerateGuidance(studentID, riskLevel)
+
+RETURN riskLevel, normalizedScore
+END CalculateRiskScore
+
+Module: GenerateGuidance
+BEGIN GenerateGuidance(studentID, riskLevel)
+SWITCH riskLevel
+    CASE "High":
+        recommendations = FETCH RecommendationsByCategory("crisis_support")
+    CASE "Moderate":
+        recommendations = FETCH RecommendationsByCategory("self_help")
+    CASE "Low":
+        recommendations = FETCH RecommendationsByCategory("wellness_tips")
+END SWITCH
+
+STORE recommendations LINKED TO studentID
+DISPLAY recommendations TO studentID
+END GenerateGuidance
+
+Module: ValidateLogin
+BEGIN ValidateLogin(username, password)
+record = FETCH UserAccount WHERE username = username
+IF record IS NULL THEN
+    RETURN "Invalid username"
+END IF
+
+IF HASH(password) = record.passwordHash THEN
+    CREATE session FOR record.userID
+    RETURN "Login successful"
+ELSE
+    RETURN "Incorrect password"
+END IF
+END ValidateLogin
+
+Module: RequestAppointment
+BEGIN RequestAppointment(studentID, counselorID, preferredDate)
+availableSlots = FETCH OpenSlots(counselorID, preferredDate)
+IF availableSlots IS EMPTY THEN
+    RETURN "No slots available"
+END IF
+
+selectedSlot = PROMPT student TO CHOOSE FROM availableSlots
+IF selectedSlot.status = "Open" THEN
+    UPDATE selectedSlot.status = "Booked"
+    CREATE appointment RECORD(studentID, counselorID, selectedSlot)
+    NOTIFY studentID, counselorID
+    RETURN "Appointment confirmed"
+ELSE
+    RETURN "Slot no longer available"
+END IF
+END RequestAppointment

@@ -1,0 +1,49 @@
+MindBridge: Structured English
+Process 2.0 / 3.0 / 4.0 — Conduct Assessment, Analyze Risk, and Provide Guidance
+
+BEGIN ConductAssessmentAndGuidance
+    IF student login is VALID THEN
+        DISPLAY assessment questionnaire
+        REPEAT UNTIL all questions are answered
+            CAPTURE student response
+            IF response is BLANK OR out of valid range THEN
+                DISPLAY "Invalid response, please try again"
+            ELSE
+                STORE response IN Assessment Responses
+            ENDIF
+        END REPEAT
+        SEND all responses TO AI Analysis Module
+        COMPUTE risk score FROM weighted responses
+        IF risk score >= 75 THEN
+            SET risk level = "High"
+            NOTIFY guidance counselor IMMEDIATELY
+        ELSE IF risk score >= 40 AND risk score < 75 THEN
+            SET risk level = "Moderate"
+            GENERATE self-help guidance recommendations
+        ELSE
+            SET risk level = "Low"
+            GENERATE general wellness tips
+        ENDIF
+        STORE risk score AND risk level IN AI Analysis Results
+        DISPLAY guidance recommendations TO student
+    ELSE
+        DISPLAY "Invalid username or password"
+    ENDIF
+END ConductAssessmentAndGuidance
+
+Process 5.0 — Manage Counseling Appointment Request
+
+BEGIN RequestAppointment
+    IF risk level = "High" OR student requests appointment THEN
+        RETRIEVE available counselor time slots FROM Appointment Schedule
+        DISPLAY available slots TO student
+        CAPTURE selected slot
+        IF selected slot is STILL AVAILABLE THEN
+            RESERVE slot IN Appointment Schedule
+            SET appointment status = "Confirmed"
+            NOTIFY student AND counselor
+        ELSE
+            DISPLAY "Slot no longer available, please select another"
+        ENDIF
+    ENDIF
+END RequestAppointment
