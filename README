@@ -1,1 +1,76 @@
+# MindBridge — AI-Assisted Student Mental Wellness Monitoring System
+
+Backend API for the MindBridge thesis project (Express + PostgreSQL + Prisma).
+
+## Repository structure
+```
+mindbridge/
+├── server/          # Express + Prisma backend API (this is what you'll run)
+│   ├── prisma/       # Database schema + seed script
+│   ├── src/           # Application source code
+│   └── README.md       # Backend-specific notes
+└── README.md          # This file
+```
+
+## Prerequisites (install these first)
+- **Node.js** v18 or later — check with `node -v`
+- **npm** (comes with Node.js) — check with `npm -v`
+- **PostgreSQL** — either installed locally, or a free hosted instance from
+  [Supabase](https://supabase.com), [Railway](https://railway.app), or [Neon](https://neon.tech)
+- **Git**
+
+## Setup instructions (run these in order)
+
+### 1. Clone the repository
+```bash
+git clone <your-repo-url>
+cd mindbridge/server
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Create your environment file
+```bash
+cp .env.example .env
+```
+Then open `.env` and fill in:
+- `DATABASE_URL` — your PostgreSQL connection string
+- `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` — any long random strings (see command below)
+- `FIELD_ENCRYPTION_KEY` — generate with:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+- `ANTHROPIC_API_KEY` — only required if you're testing the AI chatbot endpoint
+
+**Each teammate needs their own `.env` file.** It is intentionally excluded from
+Git (see `.gitignore`) because it contains secrets — never commit it.
+
+### 4. Set up the database
+```bash
+npx prisma migrate dev --name init
+node prisma/seed.js
+```
+This creates all tables and seeds the default weekly assessment template.
+
+### 5. Run the server
+```bash
+npm run dev
+```
+The API will be running at `http://localhost:4000`. Confirm it's working by
+visiting `http://localhost:4000/api/health` — you should see `{"status":"ok"}`.
+
+## Verifying it works on a teammate's machine
+Each group member should independently:
+1. Clone the repo fresh (not copy a working folder)
+2. Follow steps 1–5 above exactly
+3. Confirm `/api/health` responds
+4. Register a test account via `POST /api/auth/register` (e.g. using Postman/Thunder Client) and confirm login works
+
+If all members can do this without asking the person who wrote the code for help, the setup instructions have done their job.
+
+## Full API and architecture documentation
+See `server/README.md` for folder structure, key design decisions, and endpoint list.
 
