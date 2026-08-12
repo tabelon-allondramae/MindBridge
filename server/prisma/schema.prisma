@@ -1,0 +1,178 @@
+// MindBridge database schema
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  counselor
+  admin
+}
+
+enum RiskLevel {
+  low
+  moderate
+  high
+}
+
+enum AlertStatus {
+  open
+  in_progress
+  resolved
+}
+
+enum ChatSender {
+  student
+  ai
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  student           Student?
+  interventionLogs  InterventionLog[]
+  resourcesCreated  Resource[]
+  auditLogs         AuditLog[]
+}
+
+model Student {
+  userId         String   @id
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolId       String   @unique
+  program        String
+  yearLevel      Int
+  consentAiData  Boolean  @default(false)
+
+  assessments    Assessment[]
+  journalEntries JournalEntry[]
+  chatSessions   ChatSession[]
+  alerts         Alert[]
+}
+
+model AssessmentTemplate {
+  id            String   @id @default(uuid())
+  name          String
+  version       Int      @default(1)
+  instrumentType String  // e.g. "WHO-5"
+  questions     Json     // [{ key, text }]
+  scoringRules  Json     // { multiplier, thresholds: { high, moderate } }
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  assessments   Assessment[]
+}
+
+model Assessment {
+  id           String     @id @default(uuid())
+  studentId    String
+  student      Student    @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  templateId   String
+  template     AssessmentTemplate @relation(fields: [templateId], references: [id])
+  totalScore   Int        // percentage 0-100
+  riskLevel    RiskLevel
+  submittedAt  DateTime   @default(now())
+
+  responses    AssessmentResponse[]
+  alerts       Alert[]
+
+  @@index([studentId, submittedAt])
+}
+
+model AssessmentResponse {
+  id            String     @id @default(uuid())
+  assessmentId  String
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionKey   String
+  answerValue   Int
+}
+
+model JournalEntry {
+  id                String   @id @default(uuid())
+  studentId         String
+  student           Student  @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  contentEncrypted  String   @db.Text
+  moodTag           String?
+  createdAt         DateTime @default(now())
+
+  @@index([studentId, createdAt])
+}
+
+model ChatSession {
+  id         String    @id @default(uuid())
+  studentId  String
+  student    Student   @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+
+  messages   ChatMessage[]
+}
+
+model ChatMessage {
+  id         String     @id @default(uuid())
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender     ChatSender
+  content    String     @db.Text
+  flagged    Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model Alert {
+  id                  String      @id @default(uuid())
+  studentId           String
+  student             Student     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  sourceAssessmentId  String?
+  sourceAssessment    Assessment? @relation(fields: [sourceAssessmentId], references: [id])
+  riskLevel           RiskLevel
+  status              AlertStatus @default(open)
+  createdAt           DateTime    @default(now())
+
+  interventionLogs    InterventionLog[]
+
+  @@index([status, riskLevel])
+}
+
+model InterventionLog {
+  id           String   @id @default(uuid())
+  alertId      String
+  alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  counselorId  String
+  counselor    User     @relation(fields: [counselorId], references: [id])
+  note         String   @db.Text
+  createdAt    DateTime @default(now())
+}
+
+model Resource {
+  id         String   @id @default(uuid())
+  title      String
+  body       String   @db.Text
+  category   String
+  createdBy  String
+  author     User     @relation(fields: [createdBy], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String
+  actor       User     @relation(fields: [actorId], references: [id])
+  action      String
+  targetTable String
+  targetId    String
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+}
