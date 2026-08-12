@@ -69,8 +69,6 @@ Each group member should independently:
 3. Confirm `/api/health` responds
 4. Register a test account via `POST /api/auth/register` (e.g. using Postman/Thunder Client) and confirm login works
 
-If all members can do this without asking the person who wrote the code for help, the setup instructions have done their job.
-
 ## Full API and architecture documentation
 See `server/README.md` for folder structure, key design decisions, and endpoint list.
 
